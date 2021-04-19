@@ -8,7 +8,7 @@ import { Container } from "@material-ui/core"
 function App() {
   return (
     <Provider store={store}>
-      <Container maxlength="lg">
+      <Container maxLength="lg">
         <DCandidates />
       </Container>
     </Provider>
