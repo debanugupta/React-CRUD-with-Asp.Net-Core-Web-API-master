@@ -1,6 +1,9 @@
-import React, {useState} from "react";
+import React, {useState,useEffect} from "react";
 import { Grid, TextField, withStyles, FormControl, InputLabel, Select, MenuItem, Button, FormHelperText } from "@material-ui/core";
 import useForm from "./useForm";
+import { connect } from "react-redux";
+import * as actions from "../actions/dCandidate";
+import { useToasts } from "react-toast-notifications";
 
 const styles = theme => ({
     root: {
@@ -28,12 +31,13 @@ const initialFieldValues = {
 }
 
 
-
-
 const DCandidateForm = ({classes, ...props}) => {
 
+    //toast msg.
+    const { addToast } = useToasts()
+
     const validate = (fieldValues = values) => {
-        let temp={}
+        let temp= {...errors}
         if ('fullName' in fieldValues)
             temp.fullName = fieldValues.fullName?"":"This field is required."
         if ('mobile' in fieldValues)
@@ -54,8 +58,9 @@ const DCandidateForm = ({classes, ...props}) => {
         setValues,
         errors,
         setErrors,
-        handleInputChange
-    } = useForm(initialFieldValues, validate)
+        handleInputChange,
+        resetForm
+    } = useForm(initialFieldValues, validate, props.setCurrentId)
 
     //material-ui select
     const inputLabel = React.useRef(null);
@@ -66,12 +71,26 @@ const DCandidateForm = ({classes, ...props}) => {
 
     const handleSubmit = e =>{
         e.preventDefault()
-        // console.log(values);
         if(validate())
         {
-            window.alert('validation succeeded')
+            const onSuccess = () => { 
+                resetForm()
+                addToast("Submitted successfully",{appearance:'success'})
+            } 
+            if (props.currentId == 0)
+                props.createDCandidate(values, onSuccess)
+            else
+                props.updateDCandidate(props.currentId, values, onSuccess)
         }
     }
+
+    useEffect(()=>{
+        if (props.currentId !=0)
+            setValues({
+                ...props.dCandidateList.find(x => x.id == props.currentId)
+            })
+            setErrors({})
+    }, [props.currentId])
 
     return ( 
         <form autoComplete="off" noValidate className={classes.root} onSubmit={handleSubmit}>
@@ -152,7 +171,7 @@ const DCandidateForm = ({classes, ...props}) => {
                         <Button
                             variant="contained"
                             className={classes.smMargin}
-                            
+                            onClick = {resetForm}
                         >
                             Reset
                         </Button>
@@ -163,4 +182,13 @@ const DCandidateForm = ({classes, ...props}) => {
     )
 }
 
-export default withStyles(styles)(DCandidateForm);
+const mapStateToProps = state =>({
+    dCandidateList:state.dCandidate.list
+})
+
+const mapActionToProps = {
+    createDCandidate: actions.create,
+    updateDCandidate: actions.update
+}
+
+export default connect(mapStateToProps,mapActionToProps)(withStyles(styles)(DCandidateForm));
